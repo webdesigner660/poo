@@ -3,8 +3,14 @@
 namespace App;
 
 use Exception;
+use Throwable;
 
-class App
+use MiladRahimi\PhpRouter\Router;
+use MiladRahimi\PhpRouter\Exceptions\RouteNotFoundException;
+
+use App\Controller\PageController;
+
+final class App
 {
 
     // Singleton Etape 2: on crée une propriété statique pour stocker l'instance unique
@@ -12,7 +18,8 @@ class App
     // - self représente le type de la class dans laquelle on est (ici = App)
     // - ? précise que la valeur peut aussi contenir null
     private static ?self $app_instance = null;
-    private string $last_message;
+
+    private Router $router;
     // Singleton Etape 3: On crée un méthode publique statique qui permet d'obtenir l'instance unique
     public static function getApp(): self
     {
@@ -22,14 +29,38 @@ class App
         }
         return self::$app_instance;
     }
-    public function toto(string $msg): void
+
+    public function start(): void
     {
-        $this->last_message = $msg;
-        echo $msg . ' Je suis Toto !';
+        $this->registerRoutes();
+        $this->startRouter();
     }
     // Singleton Etape 1: Bloquer l'utilisation de "new" depuis l'extérieur
     // => passer le constructeur en "private"
-    private function __construct() {}
+    private function __construct()
+    {
+        $this->router = Router::create();
+    }
+
+    private function registerRoutes(): void
+    {
+        $this->router->get('/', [PageController::class, 'index']);
+        $this->router->get('/mentions-legales', [PageController::class, 'mentionsLegales']);
+    }
+
+    private function startRouter(): void
+    {
+        try {
+            $this->router->dispatch();
+        } catch (RouteNotFoundException $e) {
+            http_response_code(404);
+            echo 'Oups... La page n\'existe pas';
+        } catch (Throwable $e) {
+            http_response_code(500);
+            echo 'Erreur interne du serveur';
+        }
+    }
+
     // Singleton Etape 4: Bloquer l'utilisation de "clone" depuis l'extérieur
     private function __clone() {}
     // Singleton Etape 5: Bloquer la désérialisation de l'objet (depuis la session par exemple)
