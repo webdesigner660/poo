@@ -3,34 +3,31 @@
 namespace Symplefony;
 
 use Exception;
+use PDO;
 
 class Database
 {
-    private static ?self $app_instance = null;
-    private function __construct() {}
-    private string $last_message;
-    public static function getDatabase(): self
+    private const PDO_OPTIONS = [
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
+    ];
+
+    private static ?PDO $pdo_instance = null;
+
+    public static function getPDO(): PDO
     {
-        // Si l'instance n'existe pas encore on la crée
-        if (
-            is_null(self::$app_instance)
-        ) {
-            self::$app_instance = new self();
+        if (is_null(self::$pdo_instance)) {
+            $dsn = sprintf('mysql:host=%s;dbname=%s', $_ENV['db_host'], $_ENV['db_name']);
+
+            self::$pdo_instance = new PDO($dsn, $_ENV['db_user'], $_ENV['db_pass'], self::PDO_OPTIONS);
         }
-        return self::$app_instance;
+
+        return self::$pdo_instance;
     }
-    public function titi(string $msg1): void
-    {
-        $this->last_message = $msg1;
-        echo $msg1 . ' Je suis titi !';
-    }
+
+    private function __construct() {}
     private function __clone() {}
     public function __wakeup()
     {
-        echo 'Je suis Toto !';
         throw new Exception("Non c'est interdit !");
     }
-
-
-    private static ?self $database_instance = null;
 }
